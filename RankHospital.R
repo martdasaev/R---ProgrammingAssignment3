@@ -1,0 +1,108 @@
+
+rankhospital <- function(state, outcome, num = "best") {
+
+  
+  
+  
+  #outcome[, 11] <- as.numeric(outcome[, 11])
+  ## You may get a warning about NAs being introduced; that is okay
+  #hist(outcome[, 11])
+  
+  ##best.R
+  #rm(outcome)
+  require(stats)
+  library(dplyr)
+  
+  
+
+    #Read outcome data
+    outcome_data <- read.csv("./rprog-data-ProgAssignment3-data/outcome-of-care-measures.csv", colClasses = "character")  
+    
+    ##Check that input data are valid
+    ##Available options  for outcome value
+    outcome_default <- c("heart attack","heart failure", "pneumonia")
+    
+    if (!outcome %in% outcome_default) stop("Invalid outcome")
+    if (!state %in% outcome_data$State) stop("Invalid state")
+    
+    
+    ## Return hospital name in that state with lowest 30-day death
+    ## rate
+    #This is done by function call which interprets outcome value and searching for min value of the outcome
+    #in the user-defined state and returns df with Hospital names and position in ordered manner.
+    
+    fun <- function(outcome, num = "best")
+      
+    {
+      hospital_sorted_list <- NULL
+      
+      
+      switch(outcome,
+             "heart attack" = {#subset for choosen state 
+               outcome_for_state <- subset(outcome_data, outcome_data$State == state , select = c(Hospital.Name, Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack))
+               
+               #use arrange() to get df sorted by outcome
+               hospital_sorted_list <- arrange(outcome_for_state, as.numeric(Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack, Hospital.Name))
+               min_val <- min(as.numeric(hospital_sorted_list$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack))
+               
+             },
+             "heart failure" = {#subset for choosen state 
+               outcome_for_state <- subset(outcome_data, outcome_data$State == state , select = c(Hospital.Name, Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure))
+               
+               #use arrange() to get df sorted by outcome
+               hospital_sorted_list <- arrange(outcome_for_state, as.numeric(Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure, Hospital.Name))
+               min_val <- min(as.numeric(hospital_sorted_list$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure))
+               
+               
+             },
+             "pneumonia" = {#subset for choosen state 
+               outcome_for_state <- subset(outcome_data, outcome_data$State == state , select = c(Hospital.Name, Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia))
+               
+               #use arrange() to get df sorted by outcome
+               hospital_sorted_list <- arrange(outcome_for_state, as.numeric(Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia, Hospital.Name))
+               min_val <- min(as.numeric(hospital_sorted_list$Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia))
+               
+             }
+             
+      ) 
+      #to simplify call to outcome column
+      names(hospital_sorted_list)[2] <- "outcome_rate"
+      cleaned_hospitals <- hospital_sorted_list[hospital_sorted_list$outcome_rate != "Not Available",]
+      cleaned_hospitals$Trank <- rank(x<-as.numeric(cleaned_hospitals$outcome_rate),na.last = T, ties.method = "first")
+      print(cleaned_hospitals)
+      
+      if (num == "best") num <- 1
+      if (num == "worst") num <- length(cleaned_hospitals$Trank)
+      if (num > length(cleaned_hospitals$Trank)) {
+        res_v <- "NA" 
+        return (res_v)}
+       
+      
+        res_v <- as.character(subset(cleaned_hospitals, Trank == num,select = Hospital.Name))
+      #resulting vector (for some cases we expect more than one result)
+      #print(hospital_sorted_list)
+      print (num)
+      return(res_v)
+    }
+    
+    
+    result <- fun(outcome, num)
+    print(result)  
+  
+  
+    ## Return hospital name in that state with the given rank
+    ## 30-day death rate
+
+
+    return(result)
+
+}
+
+
+c <- rankhospital("MD", "heart attack", "worst")
+c
+
+
+#(r1 <- rank(x1 <- c(3, 1, 4, 15, 92)))
+
+
